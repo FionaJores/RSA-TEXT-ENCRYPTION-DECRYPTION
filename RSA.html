@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RSA Encryption and Decryption</title>
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 0;
+    }
+
+    #video-bg {
+        position: fixed;
+        right: 0;
+        bottom: 0;
+        min-width: 50%;
+        min-height: 50%;
+        width: auto;
+        height: auto;
+        z-index: -1000;
+        background-size: cover;
+    }
+
+    .container {
+        position: relative;
+        z-index: 1;
+        max-width: 800px;
+        margin: 50px auto;
+        padding: 20px;
+        background-color: rgba(255, 255, 255, 0.7); /* Semi-transparent white background */
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+        text-align: center;
+        color: #000000;
+        margin-bottom: 20px;
+    }
+
+    label {
+        font-weight: bold;
+        color: #000000;
+    }
+
+    textarea, button {
+        width: calc(50% - 5px);
+        padding: 10px;
+        margin-top: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-sizing: border-box;
+        font-size: 16px;
+    }
+
+    textarea {
+        margin-right: 0; /* Add margin to the right for better alignment */
+        width: calc(100% - 20px);
+    }
+
+    .input-container {
+        text-align: center; /* Align buttons at the center */
+    }
+
+    button {
+        width: calc(40% - 5px); /* Adjusted width */
+        margin-right: 10px; /* Added margin between buttons */
+        transition: all 0.3s ease; /* Adding easing effect */
+    }
+
+    button:last-child {
+        margin-right: 0; /* Remove margin for the last button */
+    }
+
+    .result {
+        margin-top: 20px;
+    }
+
+    @media screen and (max-width: 600px) {
+        textarea, button {
+            width: 100%;
+            margin-right: 0; /* Remove margin on smaller screens */
+        }
+    }
+</style>
+</head>
+<body>
+
+<video id="video-bg" autoplay muted>
+    <source src="background.mp4" type="video/mp4">
+    <!-- Add additional video formats if needed -->
+    Your browser does not support the video tag.
+</video>
+
+<div class="container">
+    <h1>RSA Encryption and Decryption</h1>
+
+    <div class="input-container">
+        <label for="plainText"><b>Plain Text</b></label> <!-- Making "Plain Text" label bold -->
+        <textarea id="plainText" placeholder="Enter your message"></textarea>
+
+        <button onclick="encrypt()">Encrypt</button>
+        <button onclick="decrypt()">Decrypt</button>
+    </div>
+
+    <div class="result">
+        <h3>Encrypted Text</h3>
+        <textarea id="encryptedText" readonly></textarea>
+
+        <h3>Decrypted Text</h3>
+        <textarea id="decryptedText" readonly></textarea>
+    </div>
+</div>
+
+<script>
+    function modExp(base, exponent, modulus) {
+        if (modulus === 1) return 0;
+        let result = 1;
+        base = base % modulus;
+        while (exponent > 0) {
+            if (exponent % 2 === 1) {
+                result = (result * base) % modulus;
+            }
+            exponent = Math.floor(exponent / 2);
+            base = (base * base) % modulus;
+        }
+        return result;
+    }
+
+    // Function to generate RSA keys
+    function generateKeys() {
+        // Generate two distinct prime numbers p and q
+        const p = 61; // Replace with actual prime number generation
+        const q = 53; // Replace with actual prime number generation
+        const n = p * q; // Calculate n
+        const phi = (p - 1) * (q - 1); // Calculate Euler's totient function (φ)
+        let e = 17; // Commonly used value for e
+        while (gcd(e, phi) !== 1) { // Ensure e and φ(n) are coprime
+            e++;
+        }
+        const d = modInverse(e, phi); // Calculate d using modular inverse
+        return { publicKey: { e, n }, privateKey: { d, n } };
+    }
+
+    // Function to calculate greatest common divisor
+    function gcd(a, b) {
+        if (b === 0) return a;
+        return gcd(b, a % b);
+    }
+
+    // Function to calculate modular inverse
+    function modInverse(a, m) {
+        let m0 = m;
+        let x0 = 0;
+        let x1 = 1;
+        let y = 0;
+        let q, temp;
+        while (a > 1) {
+            q = Math.floor(a / m);
+            temp = m;
+            m = a % m;
+            a = temp;
+            temp = x0;
+            x0 = x1 - q * x0;
+            x1 = temp;
+        }
+        if (x1 < 0) {
+            x1 += m0;
+        }
+        return x1;
+    }
+
+    // Function to perform RSA encryption
+    function encrypt() {
+        const plainText = document.getElementById("plainText").value;
+        const publicKey = { e: 17, n: 3233 }; // Example public key, replace with actual public key
+        const encrypted = rsaEncrypt(plainText, publicKey);
+        document.getElementById("encryptedText").value = encrypted;
+    }
+
+    // Function to perform RSA decryption
+    function decrypt() {
+        const encryptedText = document.getElementById("encryptedText").value;
+        const privateKey = { d: 2753, n: 3233 }; // Example private key, replace with actual private key
+        const decrypted = rsaDecrypt(encryptedText, privateKey);
+        document.getElementById("decryptedText").value = decrypted;
+    }
+
+    // Function to perform RSA encryption
+    function rsaEncrypt(plainText, publicKey) {
+        const { e, n } = publicKey;
+        let result = '';
+        for (let i = 0; i < plainText.length; i++) {
+            const charCode = plainText.charCodeAt(i);
+            const encryptedCharCode = modExp(charCode, e, n);
+            result += encryptedCharCode + ' ';
+        }
+        return result.trim(); // Trim any trailing space
+    }
+
+    // Function to perform RSA decryption
+    function rsaDecrypt(encryptedText, privateKey) {
+        const { d, n } = privateKey;
+        const encryptedCodes = encryptedText.split(' ');
+        let result = '';
+        for (let i = 0; i < encryptedCodes.length; i++) {
+            const encryptedCharCode = parseInt(encryptedCodes[i]);
+            const decryptedCharCode = modExp(encryptedCharCode, d, n);
+            result += String.fromCharCode(decryptedCharCode);
+        }
+        return result;
+    }
+</script>
+
+</body>
+</html>
